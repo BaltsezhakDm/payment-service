@@ -1,4 +1,5 @@
 import pytest
+from fastapi.testclient import TestClient
 from decimal import Decimal
 
 from app.services.payment_service import PaymentService
@@ -7,6 +8,8 @@ from app.repositories.memory import (
     InMemoryPaymentRepository,
     )
 from app.models.order import Order
+from app.api.deps import get_payment_service
+from app.main import app
 
 
 @pytest.fixture
@@ -21,6 +24,18 @@ def payment_service(repos):
 
     return PaymentService(order_repo, payment_repo)
 
+@pytest.fixture 
+def client(repos):     
+    order_repo, payment_repo = repos      
+    service = PaymentService(order_repo, payment_repo)      
+
+    app.dependency_overrides[get_payment_service] = lambda: service  
+
+    client = TestClient(app) 
+
+    yield client    
+
+    app.dependency_overrides.clear()
 
 @pytest.fixture
 def order_1000(repos):

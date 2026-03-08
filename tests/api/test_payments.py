@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 
 
-def test_create_cash_payment(client: TestClient, seeded_order_1000):
+def test_create_cash_payment(client: TestClient, order_1000):
     response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "300.00",
             "type": "cash",
@@ -13,15 +13,15 @@ def test_create_cash_payment(client: TestClient, seeded_order_1000):
     assert response.status_code == 201
     data = response.json()
 
-    assert data["order_id"] == seeded_order_1000["id"]
+    assert data["order_id"] == order_1000.id
     assert data["amount"] == "300.00"
     assert data["type"] == "cash"
     assert data["status"] == "pending"
 
 
-def test_create_acquiring_payment(client: TestClient, seeded_order_1000):
+def test_create_acquiring_payment(client: TestClient, order_1000):
     response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "300.00",
             "type": "acquiring",
@@ -31,7 +31,7 @@ def test_create_acquiring_payment(client: TestClient, seeded_order_1000):
     assert response.status_code == 201
     data = response.json()
 
-    assert data["order_id"] == seeded_order_1000["id"]
+    assert data["order_id"] == order_1000.id
     assert data["amount"] == "300.00"
     assert data["type"] == "acquiring"
     assert data["status"] == "pending"
@@ -50,9 +50,9 @@ def test_create_payment_returns_404_for_unknown_order(client: TestClient):
     assert response.json()["detail"] == "Order not found"
 
 
-def test_create_payment_returns_422_for_invalid_body(client: TestClient, seeded_order_1000):
+def test_create_payment_returns_422_for_invalid_body(client: TestClient, order_1000):
     response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "not-a-number",
             "type": "cash",
@@ -62,9 +62,9 @@ def test_create_payment_returns_422_for_invalid_body(client: TestClient, seeded_
     assert response.status_code == 422
 
 
-def test_create_payment_returns_422_for_invalid_type(client: TestClient, seeded_order_1000):
+def test_create_payment_returns_422_for_invalid_type(client: TestClient, order_1000):
     response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "300.00",
             "type": "crypto",
@@ -76,10 +76,10 @@ def test_create_payment_returns_422_for_invalid_type(client: TestClient, seeded_
 
 def test_create_payment_returns_409_when_order_amount_would_be_exceeded(
     client: TestClient,
-    seeded_order_1000,
+    order_1000,
 ):
     response_1 = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "700.00",
             "type": "cash",
@@ -88,7 +88,7 @@ def test_create_payment_returns_409_when_order_amount_would_be_exceeded(
     assert response_1.status_code == 201
 
     response_2 = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "400.00",
             "type": "acquiring",
@@ -99,9 +99,9 @@ def test_create_payment_returns_409_when_order_amount_would_be_exceeded(
     assert response_2.json()["detail"] == "Total payments cannot exceed order amount"
 
 
-def test_deposit_payment(client: TestClient, seeded_order_1000):
+def test_deposit_payment(client: TestClient, order_1000):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "500.00",
             "type": "cash",
@@ -120,7 +120,7 @@ def test_deposit_payment(client: TestClient, seeded_order_1000):
     assert data["id"] == payment_id
     assert data["amount"] == "500.00"
     assert data["deposited_amount"] == "200.00"
-    assert data["refunded_amount"] == "0.00"
+    assert data["refunded_amount"] == "0"
     assert data["status"] == "pending"
 
 
@@ -136,10 +136,10 @@ def test_deposit_payment_returns_404_for_unknown_payment(client: TestClient):
 
 def test_deposit_payment_returns_400_when_deposit_exceeds_payment_amount(
     client: TestClient,
-    seeded_order_1000,
+    order_1000,
 ):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "300.00",
             "type": "cash",
@@ -156,9 +156,9 @@ def test_deposit_payment_returns_400_when_deposit_exceeds_payment_amount(
     assert response.json()["detail"] == "Deposit amount exceeds payment amount"
 
 
-def test_deposit_payment_returns_422_for_invalid_body(client: TestClient, seeded_order_1000):
+def test_deposit_payment_returns_422_for_invalid_body(client: TestClient, order_1000):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "300.00",
             "type": "cash",
@@ -174,9 +174,9 @@ def test_deposit_payment_returns_422_for_invalid_body(client: TestClient, seeded
     assert response.status_code == 422
 
 
-def test_refund_payment(client: TestClient, seeded_order_1000):
+def test_refund_payment(client: TestClient, order_1000):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "500.00",
             "type": "cash",
@@ -215,10 +215,10 @@ def test_refund_payment_returns_404_for_unknown_payment(client: TestClient):
 
 def test_refund_payment_returns_400_when_refund_exceeds_deposited_amount(
     client: TestClient,
-    seeded_order_1000,
+    order_1000,
 ):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "500.00",
             "type": "cash",
@@ -241,9 +241,9 @@ def test_refund_payment_returns_400_when_refund_exceeds_deposited_amount(
     assert response.json()["detail"] == "Refund amount exceeds deposited amount"
 
 
-def test_refund_payment_returns_422_for_invalid_body(client: TestClient, seeded_order_1000):
+def test_refund_payment_returns_422_for_invalid_body(client: TestClient, order_1000):
     create_response = client.post(
-        f"/orders/{seeded_order_1000['id']}/payments",
+        f"/orders/{order_1000.id}/payments",
         json={
             "amount": "500.00",
             "type": "cash",
