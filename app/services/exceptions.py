@@ -9,8 +9,8 @@ class InvalidDepositAmountError(Exception):
 class InvalidRefundAmountError(Exception):
     pass
 
-class PaymentNotFoundError():
+class PaymentNotFoundError(Exception):
     pass
 
-class OrderNotFoundError():
+class OrderNotFoundError(Exception):
     pass
