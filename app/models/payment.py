@@ -3,7 +3,7 @@ from enum import Enum
 
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy import ForeignKey, Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -48,6 +48,8 @@ class Payment(Base):
         default=PaymentStatus.PENDING,
         nullable=False,
     )
+
+    order: Mapped["Order"] = relationship(back_populates="payments")
 
 
 class PaymentOperation(Base):

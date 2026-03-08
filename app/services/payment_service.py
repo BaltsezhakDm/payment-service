@@ -1,7 +1,7 @@
 from decimal import Decimal
 
+from app.models.order import Order, OrderPaymentStatus
 from app.models.payment import Payment, PaymentType
-from app.models.order import Order
 from app.services.exceptions import (
     OverpaymentError,
     InvalidDepositAmountError,
@@ -9,57 +9,64 @@ from app.services.exceptions import (
     OrderNotFoundError,
     PaymentNotFoundError,
 )
-from app.repositories.interfaces import OrderRepository, PaymentRepository
+from app.repositories.order_repository import SqlAlchemyOrderRepository
+from app.repositories.payment_repository import SqlAlchemyPaymentRepository
 
 
 class PaymentService:
-    def __init__(self, order_repo: OrderRepository, payment_repo: PaymentRepository):
-        self._next_id = 1
+    def __init__(
+        self,
+        order_repo: SqlAlchemyOrderRepository,
+        payment_repo: SqlAlchemyPaymentRepository,
+    ) -> None:
         self.order_repo = order_repo
         self.payment_repo = payment_repo
 
-    def create_payment(self, order_id: int, amount: Decimal, payment_type: PaymentType) -> Payment:
+    def create_payment(
+        self,
+        order_id: int,
+        amount: Decimal,
+        payment_type: PaymentType,
+    ) -> Payment:
         order = self.order_repo.get_by_id(order_id)
         if order is None:
             raise OrderNotFoundError()
 
-        current_total = sum(p.amount for p in order.payments)
-
+        current_total = sum(payment.amount for payment in order.payments)
         if current_total + amount > order.amount:
             raise OverpaymentError()
 
         payment = Payment(
-            id=self._next_id,
             order_id=order.id,
             amount=amount,
             type=payment_type,
         )
-        self._next_id += 1
+
         payment = self.payment_repo.save(payment)
         order.payments.append(payment)
-        self.order_repo.save(order)
         return payment
 
     def deposit_payment(self, payment_id: int, amount: Decimal) -> Payment:
         payment = self.payment_repo.get_by_id(payment_id)
         if payment is None:
             raise PaymentNotFoundError()
-        
+
         order = self.order_repo.get_by_id(payment.order_id)
         if order is None:
             raise OrderNotFoundError()
-        
+
         if payment.deposited_amount + amount > payment.amount:
-            raise InvalidDepositAmountError() 
+            raise InvalidDepositAmountError()
 
         total_paid = self._total_paid(order)
-
         if total_paid + amount > order.amount:
             raise OverpaymentError()
 
         payment.deposited_amount += amount
+        payment = self.payment_repo.save(payment)
 
         self._update_order_status(order)
+        self.order_repo.save(order)
 
         return payment
 
@@ -67,29 +74,34 @@ class PaymentService:
         payment = self.payment_repo.get_by_id(payment_id)
         if payment is None:
             raise PaymentNotFoundError()
-        
+
         order = self.order_repo.get_by_id(payment.order_id)
         if order is None:
             raise OrderNotFoundError()
-        
+
         if payment.refunded_amount + amount > payment.deposited_amount:
             raise InvalidRefundAmountError()
 
         payment.refunded_amount += amount
+        payment = self.payment_repo.save(payment)
 
         self._update_order_status(order)
+        self.order_repo.save(order)
 
         return payment
 
     def _total_paid(self, order: Order) -> Decimal:
-        return sum(p.deposited_amount - p.refunded_amount for p in order.payments)
+        return sum(
+            payment.deposited_amount - payment.refunded_amount
+            for payment in order.payments
+        )
 
-    def _update_order_status(self, order: Order):
+    def _update_order_status(self, order: Order) -> None:
         total_paid = self._total_paid(order)
 
-        if total_paid == 0:
-            order.payment_status = "unpaid"
+        if total_paid == Decimal("0.00"):
+            order.payment_status = OrderPaymentStatus.UNPAID
         elif total_paid < order.amount:
-            order.payment_status = "partially_paid"
+            order.payment_status = OrderPaymentStatus.PARTIALLY_PAID
         else:
-            order.payment_status = "paid"
+            order.payment_status = OrderPaymentStatus.PAID

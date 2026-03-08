@@ -3,7 +3,7 @@ from enum import Enum
 
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy import Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -24,3 +24,5 @@ class Order(Base):
         default=OrderPaymentStatus.UNPAID,
         nullable=False,
     )
+
+    payments: Mapped[list["Payment"]] = relationship(back_populates="order")
