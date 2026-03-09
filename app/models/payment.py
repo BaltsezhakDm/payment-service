@@ -46,6 +46,7 @@ class Payment(Base):
 
     order: Mapped["Order"] = relationship(back_populates="payments")
     operations: Mapped[List["PaymentOperation"]] = relationship(back_populates="payment", lazy="selectin")
+    bank_payments: Mapped[List["BankPayment"]] = relationship(back_populates="payment", lazy="selectin")
 
 
 class PaymentOperation(Base):

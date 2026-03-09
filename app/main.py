@@ -7,6 +7,8 @@ from app.services.exceptions import (
     OrderNotFoundError,
     OverpaymentError,
     PaymentNotFoundError,
+    BankPaymentError,
+    BankPaymentNotFoundError,
 )
 
 app = FastAPI(title="Payment Service")
@@ -14,19 +16,19 @@ app = FastAPI(title="Payment Service")
 
 @app.exception_handler(OrderNotFoundError)
 async def order_not_found_handler(request, exc):
-    raise HTTPException(status_code=404, detail="Order not found")
+    raise HTTPException(status_code=404, detail="Заказ не найден")
 
 
 @app.exception_handler(PaymentNotFoundError)
 async def payment_not_found_handler(request, exc):
-    raise HTTPException(status_code=404, detail="Payment not found")
+    raise HTTPException(status_code=404, detail="Платёж не найден")
 
 
 @app.exception_handler(OverpaymentError)
 async def overpayment_handler(request, exc):
     raise HTTPException(
         status_code=409,
-        detail="Total payments cannot exceed order amount",
+        detail="Общая сумма платежей не может превышать сумму заказа",
     )
 
 
@@ -34,7 +36,7 @@ async def overpayment_handler(request, exc):
 async def invalid_deposit_handler(request, exc):
     raise HTTPException(
         status_code=400,
-        detail="Deposit amount exceeds payment amount",
+        detail="Сумма внесения превышает сумму платежа",
     )
 
 
@@ -42,7 +44,23 @@ async def invalid_deposit_handler(request, exc):
 async def invalid_refund_handler(request, exc):
     raise HTTPException(
         status_code=400,
-        detail="Refund amount exceeds deposited amount",
+        detail="Сумма возврата превышает внесённую сумму",
+    )
+
+
+@app.exception_handler(BankPaymentNotFoundError)
+async def bank_payment_not_found_handler(request, exc):
+    raise HTTPException(
+        status_code=404,
+        detail="Банковский платёж не найден",
+    )
+
+
+@app.exception_handler(BankPaymentError)
+async def bank_payment_error_handler(request, exc):
+    raise HTTPException(
+        status_code=502,
+        detail="Ошибка при взаимодействии с банковским сервисом",
     )
 
 

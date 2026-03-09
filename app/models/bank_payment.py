@@ -1,8 +1,9 @@
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Numeric
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -26,3 +27,5 @@ class BankPayment(Base):
         nullable=False,
     )
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    payment: Mapped["Payment"] = relationship(back_populates="bank_payments")

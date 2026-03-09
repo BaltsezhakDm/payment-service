@@ -14,3 +14,12 @@ class PaymentNotFoundError(Exception):
 
 class OrderNotFoundError(Exception):
     pass
+
+class BankApiError(Exception):
+    pass
+
+class BankPaymentNotFoundError(Exception):
+    pass
+
+class BankPaymentError(Exception):
+    pass
