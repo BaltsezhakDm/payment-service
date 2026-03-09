@@ -15,7 +15,11 @@ from app.repositories.bank_payment_repository import SqlAlchemyBankPaymentReposi
 from app.services.payment_service import PaymentService
 from app.models.order import Order, OrderPaymentStatus
 from app.services.bank_service import BankPaymentService
-from app.api.deps import get_payment_service
+from app.api.deps import (
+    get_payment_service, 
+    get_bank_payment_service,
+    get_db,
+)
 from app.core.config import settings
 from app.main import app
 
@@ -73,14 +77,28 @@ def bank_payment_service(db_session, payment_service, bank_api_client_mock):
 
 
 @pytest.fixture
-def client(db_session):
+def client(repos, db_session, bank_api_client_mock):
+    order_repo, payment_repo, operation_repo = repos
+    bank_payment_repo = SqlAlchemyBankPaymentRepository(db_session)
 
     def override_get_payment_service():
-        order_repo = SqlAlchemyOrderRepository(db_session)
-        payment_repo = SqlAlchemyPaymentRepository(db_session)
-        return PaymentService(order_repo, payment_repo)
+        return PaymentService(order_repo, payment_repo, operation_repo)
+
+    def override_get_bank_payment_service():
+        payment_service = PaymentService(order_repo, payment_repo, operation_repo)
+
+        return BankPaymentService(
+            payment_service=payment_service,
+            payment_repo=payment_repo,
+            bank_payment_repo=bank_payment_repo,
+            bank_api_client=bank_api_client_mock,
+        )
+    def override_get_db():
+        yield db_session
 
     app.dependency_overrides[get_payment_service] = override_get_payment_service
+    app.dependency_overrides[get_bank_payment_service] = override_get_bank_payment_service
+    app.dependency_overrides[get_db] = override_get_db
 
     client = TestClient(app)
 

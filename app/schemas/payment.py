@@ -1,8 +1,10 @@
 from decimal import Decimal
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
 from app.models.payment import PaymentType
+from app.models.bank_payment import BankPaymentStatus
 
 
 class CreatePaymentRequest(BaseModel):
@@ -22,5 +24,17 @@ class PaymentResponse(BaseModel):
     amount: Decimal
     type: PaymentType
     status: str
-    deposited_amount: Decimal
-    refunded_amount: Decimal
+
+
+class CreateAcquiringPaymentRequest(BaseModel):
+    amount: Decimal
+
+
+class BankPaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    payment_id: int
+    bank_payment_id: str
+    status: BankPaymentStatus
+    paid_at: datetime | None
