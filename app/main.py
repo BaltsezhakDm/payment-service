@@ -12,7 +12,15 @@ from app.services.exceptions import (
     InvalidAmountError,
 )
 
-app = FastAPI(title="Payment Service")
+app = FastAPI(
+    title="Payment Service",
+    description="REST API для работы с платежами заказов, включая эквайринг и операции внесения/возврата.",
+    version="1.0.0",
+    openapi_tags=[{
+        "name": "payments",
+        "description": "Операции создания платежей, внесения/возврата средств и синхронизации эквайринга",
+    }],
+)
 
 
 @app.exception_handler(OrderNotFoundError)
