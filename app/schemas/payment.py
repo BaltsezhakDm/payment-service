@@ -1,19 +1,19 @@
 from decimal import Decimal
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.payment import PaymentType
+from app.models.payment import PaymentType, PaymentStatus
 from app.models.bank_payment import BankPaymentStatus
 
 
 class CreatePaymentRequest(BaseModel):
-    amount: Decimal
+    amount: Decimal = Field(gt=0)
     type: PaymentType
 
 
 class AmountRequest(BaseModel):
-    amount: Decimal
+    amount: Decimal = Field(gt=0)
 
 
 class PaymentResponse(BaseModel):
@@ -23,11 +23,11 @@ class PaymentResponse(BaseModel):
     order_id: int
     amount: Decimal
     type: PaymentType
-    status: str
+    status: PaymentStatus
 
 
 class CreateAcquiringPaymentRequest(BaseModel):
-    amount: Decimal
+    amount: Decimal = Field(gt=0)
 
 
 class BankPaymentResponse(BaseModel):
