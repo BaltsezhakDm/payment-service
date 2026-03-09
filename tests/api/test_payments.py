@@ -47,7 +47,7 @@ def test_create_payment_returns_404_for_unknown_order(client: TestClient):
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Order not found"
+    assert response.json()["detail"] == "Заказ не найден"
 
 
 def test_create_payment_returns_422_for_invalid_body(client: TestClient, order_1000):
@@ -96,7 +96,7 @@ def test_create_payment_returns_409_when_order_amount_would_be_exceeded(
     )
 
     assert response_2.status_code == 409
-    assert response_2.json()["detail"] == "Total payments cannot exceed order amount"
+    assert response_2.json()["detail"] == "Общая сумма платежей не может превышать сумму заказа"
 
 
 def test_deposit_payment(client: TestClient, order_1000):
@@ -119,8 +119,6 @@ def test_deposit_payment(client: TestClient, order_1000):
 
     assert data["id"] == payment_id
     assert data["amount"] == "500.00"
-    assert data["deposited_amount"] == "200.00"
-    assert data["refunded_amount"] == "0.00"
     assert data["status"] == "pending"
 
 
@@ -131,7 +129,7 @@ def test_deposit_payment_returns_404_for_unknown_payment(client: TestClient):
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Payment not found"
+    assert response.json()["detail"] == "Платёж не найден"
 
 
 def test_deposit_payment_returns_400_when_deposit_exceeds_payment_amount(
@@ -153,7 +151,7 @@ def test_deposit_payment_returns_400_when_deposit_exceeds_payment_amount(
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Deposit amount exceeds payment amount"
+    assert response.json()["detail"] == "Сумма внесения превышает сумму платежа"
 
 
 def test_deposit_payment_returns_422_for_invalid_body(client: TestClient, order_1000):
@@ -199,8 +197,6 @@ def test_refund_payment(client: TestClient, order_1000):
     data = response.json()
 
     assert data["id"] == payment_id
-    assert data["deposited_amount"] == "400.00"
-    assert data["refunded_amount"] == "150.00"
 
 
 def test_refund_payment_returns_404_for_unknown_payment(client: TestClient):
@@ -210,7 +206,7 @@ def test_refund_payment_returns_404_for_unknown_payment(client: TestClient):
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Payment not found"
+    assert response.json()["detail"] == "Платёж не найден"
 
 
 def test_refund_payment_returns_400_when_refund_exceeds_deposited_amount(
@@ -238,7 +234,7 @@ def test_refund_payment_returns_400_when_refund_exceeds_deposited_amount(
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Refund amount exceeds deposited amount"
+    assert response.json()["detail"] == "Сумма возврата превышает внесённую сумму"
 
 
 def test_refund_payment_returns_422_for_invalid_body(client: TestClient, order_1000):

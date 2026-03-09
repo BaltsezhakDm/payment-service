@@ -41,7 +41,6 @@ class BankPaymentService:
                 amount=amount,
             )
         except Exception:
-            # TODO: обработать ошибку
             raise BankPaymentError()
 
         bank_payment = BankPayment(
